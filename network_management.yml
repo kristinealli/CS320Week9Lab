@@ -25,3 +25,13 @@
           save: true
         when: ansible_network_os == "vyos.vyos.vyos"
 
+      - name: Configure OSPF routing for DMZ
+        vyos.vyos.vyos_config:
+          lines: 
+            - "set protocols ospf area 0 network '192.168.1.0/24'"
+            - "set protocols ospf parameters router-id '192.168.1.254'"
+          save: true
+        when: ansible_network_os == "vyos.vyos.vyos"
+
+      
+
