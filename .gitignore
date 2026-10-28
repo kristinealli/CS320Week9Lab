@@ -1,0 +1,16 @@
+# Ansible-generated files
+*.retry
+.ansible/
+
+# Local Vault password files
+.vault_pass
+.vault-password
+vault-password*
+
+# SSH private keys
+id_rsa
+id_ed25519
+*.pem
+
+# Generated command output
+evidence/*.log
