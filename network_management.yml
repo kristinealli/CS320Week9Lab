@@ -10,28 +10,90 @@
       router_ip: 192.168.1.254/24
 
     tasks: 
+
+      - name: Verify target is a VyOS device
+        ansible.builtin.assert:
+          that: 
+            - ansible_network_os == "vyos.vyos.vyos"
+          fail_msg: "This playbook supports only VyOS devices."
+          success_msg: "Target is configured as VyOS."
+
+      - name: Gather VyOS device facts
+        vyos.vyos.vyos_facts:
+          gather_subset:
+            - min
+        register: vyos_information
+
+      - name: Back up current VyOS configuration
+        vyos.vyos.vyos_config:
+          backup: true
+        changed_when: false
+
       - name: Configure router hostname
         vyos.vyos.vyos_config:
           lines: 
             - "set system host-name '{{ router_hostname }}'"
-          save: true
         when: ansible_network_os == "vyos.vyos.vyos"
+        notify: Save VyOS configuration
 
       - name: Configure DMZ VLAN and IP address
         vyos.vyos.vyos_config:
           lines: 
             - "set interfaces ethernet eth1 vif {{ vlan_id }} description '{{ vlan_name }}'"
             - "set interfaces ethernet eth1 vif {{ vlan_id }} address '{{ router_ip }}'"
-          save: true
         when: ansible_network_os == "vyos.vyos.vyos"
+        notify: Save VyOS configuration
 
       - name: Configure OSPF routing for DMZ
         vyos.vyos.vyos_config:
           lines: 
             - "set protocols ospf area 0 network '192.168.1.0/24'"
             - "set protocols ospf parameters router-id '192.168.1.254'"
+        when: ansible_network_os == "vyos.vyos.vyos"
+        notify: Save VyOS configuration
+
+      - name: Configure login banner
+        vyos.vyos.vyos_config:
+          lines: 
+            - "set system login banner pre-login 'Welcome to {{ router_hostname }} - managed by Ansible'"
+        when: ansible_network_os == "vyos.vyos.vyos"
+        notify: Save VyOS configuration
+
+      - name: Permit ICMP traffic to router
+        vyos.vyos.vyos_config:
+          lines: 
+            - "set firewall ipv4 input filter rule 100 action 'accept'"
+            - "set firewall ipv4 input filter rule 100 protocol 'icmp'"
+            - "set firewall ipv4 input filter rule 100 description 'Allow ICMP'"
+            - "set firewall ipv4 input filter rule 100 inbound-interface name 'eth1.150'"
+        when: ansible_network_os == "vyos.vyos.vyos"
+        notify: Save VyOS configuration
+
+      - name: Verify VyOS network configuration
+        vyos.vyos.vyos_command:
+          commands:
+            - show configuration commands
+        register: verified_config
+        changed_when: false
+
+      - name: Validate required network settings
+        ansible.builtin.assert:
+          that: 
+            - "'ExternalRouter' in verified_config.stdout[0]"
+            - "'vif 150' in verified_config.stdout[0]"
+            - "'192.168.1.254/24' in verified_config.stdout[0]"
+            - "'192.168.1.0/24' in verified_config.stdout[0]"
+            - "'pre-login' in verified_config.stdout[0]"
+            - "'rule 100' in verified_config.stdout[0]"
+          fail_msg: "One or more required settings are missing."
+
+
+    handlers:
+      - name: Save VyOS configuration
+        vyos.vyos.vyos_config:
           save: true
         when: ansible_network_os == "vyos.vyos.vyos"
+        
 
       
 

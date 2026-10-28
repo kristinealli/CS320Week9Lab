@@ -1,5 +1,4 @@
 ---
 collections: 
-  - name: cisco.ios
   - name: ansible.netcommon
   - name: vyos.vyos

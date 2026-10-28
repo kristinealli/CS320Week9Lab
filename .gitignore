@@ -1,6 +1,7 @@
 # Ansible-generated files
 *.retry
 .ansible/
+backup/
 
 # Local Vault password files
 .vault_pass
