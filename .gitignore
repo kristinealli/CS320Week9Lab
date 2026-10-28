@@ -6,6 +6,8 @@
 .vault_pass
 .vault-password
 vault-password*
+network_vault.yml
+vyos.yml
 
 # SSH private keys
 id_rsa

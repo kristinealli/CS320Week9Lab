@@ -1,0 +1,27 @@
+---
+  - name: Configure VyOS router
+    hosts: vyos
+    gather_facts: false
+
+    vars: 
+      router_hostname: ExternalRouter
+      vlan_id: 150
+      vlan_name: DMZ
+      router_ip: 192.168.1.254/24
+
+    tasks: 
+      - name: Configure router hostname
+        vyos.vyos.vyos_config:
+          lines: 
+            - "set system host-name '{{ router_hostname }}'"
+          save: true
+        when: ansible_network_os == "vyos.vyos.vyos"
+
+      - name: Configure DMZ VLAN and IP address
+        vyos.vyos.vyos_config:
+          lines: 
+            - "set interfaces ethernet eth1 vif {{ vlan_id }} description '{{ vlan_name }}'"
+            - "set interfaces ethernet eth1 vif {{ vlan_id }} address '{{ router_ip }}'"
+          save: true
+        when: ansible_network_os == "vyos.vyos.vyos"
+
